@@ -1,47 +1,29 @@
 name: Build Irc7m
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Supported targets
-#   macOS aarch64   → net10.0-maccatalyst / maccatalyst-arm64  (Mac Catalyst)
-#   Windows x64     → net10.0-windows10.0.19041.0 / win-x64   (WinUI 3)
-#
-# Linux is NOT supported by .NET MAUI (no Linux UI backend exists).
-# ─────────────────────────────────────────────────────────────────────────────
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:          # allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
 
-  # ── macOS arm64 ─────────────────────────────────────────────────────────────
+  # macOS arm64 - self-hosted runner required (needs Xcode 26)
+  # GitHub-hosted runners only have Xcode 15/16. The MAUI RC workload
+  # was compiled with Xcode 26 and references MacCatalyst 26.0 APIs
+  # that are unavailable on older runners.
+  # Register your Mac: GitHub -> Settings -> Actions -> Runners -> New
+  # Label it:  self-hosted, macos, arm64
+  # Setup script: bash .github/setup-runner.sh <TOKEN> <REPO_URL>
   build-macos:
-    name: macOS (arm64)
-    runs-on: macos-14         # GitHub's Apple Silicon (M1/M2) runner
-
+    name: macOS (arm64, self-hosted)
+    runs-on: [self-hosted, macos, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: ${{ runner.os }}-nuget-
-
-      - name: Install MAUI workload
-        run: sudo dotnet workload install maui
-
-      - name: Publish — Mac Catalyst arm64 (self-contained)
+      - name: Publish Mac Catalyst arm64 self-contained
         run: |
           dotnet publish Irc7m.csproj \
             -f net10.0-maccatalyst \
@@ -51,9 +33,7 @@ jobs:
             -o ./artifacts/macos
 
       - name: Zip .app bundle
-        run: |
-          cd artifacts/macos
-          zip -r9 ../../Irc7m-macos-arm64.zip Irc7m.app
+        run: cd artifacts/macos && zip -r9 ../../Irc7m-macos-arm64.zip Irc7m.app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -62,12 +42,19 @@ jobs:
           path: Irc7m-macos-arm64.zip
           retention-days: 30
 
+      - name: Cleanup
+        if: always()
+        run: rm -rf artifacts Irc7m-macos-arm64.zip
 
-  # ── Windows x64 ──────────────────────���──────────────────────────────────────
+
+  # Windows x64 - GitHub-hosted runner
+  # Uses maui-windows workload only (not the full maui workload) to avoid
+  # pulling Mono runtime packages for iOS/Android/Mac that are absent from
+  # nuget.org for many .NET servicing patch versions.
+  # Restore is explicitly scoped to net10.0-windows for the same reason.
   build-windows:
     name: Windows (x64)
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,28 +62,34 @@ jobs:
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: ${{ runner.os }}-nuget-
+          key: windows-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: windows-nuget-
 
-      - name: Install MAUI workload
-        run: dotnet workload install maui
+      - name: Install MAUI workload (Windows only)
+        run: dotnet workload install maui-windows
 
-      - name: Publish — Windows x64 (self-contained)
+      - name: Restore Windows TFM only
+        run: dotnet restore Irc7m.csproj /p:TargetFrameworks=net10.0-windows10.0.19041.0
+
+      - name: Publish Windows x64 self-contained
+        shell: pwsh
         run: |
           dotnet publish Irc7m.csproj `
             -f net10.0-windows10.0.19041.0 `
             -c Release `
             -r win-x64 `
             --self-contained true `
+            --no-restore `
             -o ./artifacts/windows
 
       - name: Zip Windows output
+        shell: pwsh
         run: Compress-Archive -Path artifacts/windows/* -DestinationPath Irc7m-windows-x64.zip
 
       - name: Upload artifact
@@ -105,4 +98,3 @@ jobs:
           name: Irc7m-windows-x64
           path: Irc7m-windows-x64.zip
           retention-days: 30
-
