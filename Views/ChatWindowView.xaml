@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Irc7m.ViewModels"
+             xmlns:controls="clr-namespace:Irc7m.Controls"
+             x:Class="Irc7m.Views.ChatWindowView"
+             x:DataType="vm:ChatWindowViewModel"
+             BackgroundColor="#1e1e1e">
+
+    <Grid RowDefinitions="*, 2, 44">
+
+        <!-- ── Output area ──────────────────────────────────────────────────── -->
+        <Editor x:Name="OutputEditor"
+                Grid.Row="0"
+                Text="{Binding OutputText}"
+                IsReadOnly="True"
+                BackgroundColor="#1e1e1e"
+                TextColor="#d4d4d4"
+                FontFamily="Courier New"
+                FontSize="{DynamicResource AppFontSize}"
+                Margin="4,4,4,0" />
+
+        <!-- ── Horizontal divider ───────────────────────────────────────────── -->
+        <BoxView Grid.Row="1"
+                 Color="#3c3c3c"
+                 HeightRequest="2" />
+
+        <!-- ── Input row ────────────────────────────────────────────────────── -->
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*, 72"
+              BackgroundColor="#252526"
+              Padding="4,4">
+
+            <!-- Input border highlights on focus -->
+            <Border x:Name="InputBorder"
+                    Grid.Column="0"
+                    StrokeShape="RoundRectangle 4"
+                    Stroke="#3c3c3c"
+                    StrokeThickness="1"
+                    BackgroundColor="#1e1e1e"
+                    Margin="0,0,4,0">
+                <controls:HistoryEntry
+                       x:Name="InputEntry"
+                       Text="{Binding InputText}"
+                       Placeholder="Type a message or /command…"
+                       PlaceholderColor="#555555"
+                       TextColor="#e0e0e0"
+                       BackgroundColor="Transparent"
+                       FontFamily="Courier New"
+                       FontSize="{DynamicResource AppFontSize}"
+                       ReturnCommand="{Binding SubmitInputCommand}"
+                       ReturnType="Send"
+                       HistoryUpCommand="{Binding HistoryUpCommand}"
+                       HistoryDownCommand="{Binding HistoryDownCommand}"
+                       VerticalOptions="Fill"
+                       Margin="6,0" />
+            </Border>
+
+            <Button Grid.Column="1"
+                    Text="Send"
+                    Command="{Binding SubmitInputCommand}"
+                    BackgroundColor="#0078d4"
+                    TextColor="White"
+                    FontSize="{DynamicResource AppFontSize}"
+                    CornerRadius="4"
+                    HeightRequest="34"
+                    VerticalOptions="Center" />
+        </Grid>
+
+    </Grid>
+</ContentView>

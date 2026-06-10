@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Irc7m.ViewModels"
+             xmlns:conv="clr-namespace:Irc7m.Converters"
+             x:Class="Irc7m.MainPage"
+             x:Name="PageRoot"
+             Title="Irc7m"
+             BackgroundColor="#1e1e1e">
+
+
+    <!-- ── Native menu bar additions ─────────────────────────────────────────── -->
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="File">
+            <MenuFlyoutItem Text="Settings…" Clicked="OnSettingsClicked" />
+            <MenuFlyoutSeparator />
+            <MenuFlyoutItem Text="Quit"       Clicked="OnQuitClicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Help">
+            <MenuFlyoutItem Text="About Irc7m" Clicked="OnAboutClicked" />
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
+
+    <!-- ── Converters ─────────────────────────────────────────────────────── -->
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <conv:BoolToColorConverter x:Key="TabBgConv"
+                                       TrueColor="#3c3c3c"
+                                       FalseColor="#252526" />
+            <conv:BoolToColorConverter x:Key="TabFgConv"
+                                       TrueColor="#ffffff"
+                                       FalseColor="#888888" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="36, *">
+
+        <!-- ── Tab bar ────────────────────────────────────────────────────── -->
+        <ScrollView Grid.Row="0"
+                    Orientation="Horizontal"
+                    BackgroundColor="#252526"
+                    HeightRequest="36"
+                    VerticalScrollBarVisibility="Never">
+
+            <HorizontalStackLayout Spacing="1"
+                                   Padding="4,4,4,0"
+                                   BindableLayout.ItemsSource="{Binding Tabs}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ChatWindowViewModel">
+                        <Border StrokeShape="RoundRectangle 4,4,0,0"
+                                BackgroundColor="{Binding IsSelected, Converter={StaticResource TabBgConv}}"
+                                Padding="12,5,8,5"
+                                StrokeThickness="0">
+
+                            <!-- Right-click on the tab to toggle/clear the debug panel -->
+                            <FlyoutBase.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Toggle Debug Panel"
+                                                    Command="{Binding ToggleDebugCommand}" />
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem Text="Clear Debug Log"
+                                                    Command="{Binding ClearDebugCommand}" />
+                                </MenuFlyout>
+                            </FlyoutBase.ContextFlyout>
+
+                            <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+
+                                <!-- Connection state indicator (● green/red, ⚡ orange) -->
+                                <Label Text="{Binding ConnectionIndicator}"
+                                       TextColor="{Binding ConnectionIndicatorColor}"
+                                       FontSize="10"
+                                       VerticalOptions="Center" />
+
+                                <Label Text="{Binding Title}"
+                                       TextColor="{Binding IsSelected, Converter={StaticResource TabFgConv}}"
+                                       FontSize="{DynamicResource AppFontSize}"
+                                       VerticalOptions="Center">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.SelectTabCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+
+                                <Label Text="✕"
+                                       TextColor="#666666"
+                                       FontSize="{DynamicResource AppFontSize}"
+                                       IsVisible="{Binding IsCloseable}"
+                                       VerticalOptions="Center">
+                                    <Label.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.CloseTabCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </Label.GestureRecognizers>
+                                </Label>
+
+                            </HorizontalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <!-- ── Content area (populated from code-behind on tab change) ──────── -->
+        <ContentView x:Name="ContentArea"
+                     Grid.Row="1"
+                     BackgroundColor="#1e1e1e" />
+
+    </Grid>
+</ContentPage>
