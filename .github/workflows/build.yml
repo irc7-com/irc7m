@@ -9,19 +9,31 @@ on:
 
 jobs:
 
-  # macOS arm64 - self-hosted runner required (needs Xcode 26)
-  # GitHub-hosted runners only have Xcode 15/16. The MAUI RC workload
-  # was compiled with Xcode 26 and references MacCatalyst 26.0 APIs
-  # that are unavailable on older runners.
-  # Register your Mac: GitHub -> Settings -> Actions -> Runners -> New
-  # Label it:  self-hosted, macos, arm64
-  # Setup script: bash .github/setup-runner.sh <TOKEN> <REPO_URL>
+  # macOS arm64 - GitHub-hosted runner (macos-15 = Apple Silicon, ships with Xcode 26)
   build-macos:
-    name: macOS (arm64, self-hosted)
-    runs-on: [self-hosted, macos, arm64]
+    name: macOS (arm64)
+    runs-on: macos-15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: macos-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: macos-nuget-
+
+      - name: Install MAUI workload (Mac Catalyst only)
+        run: dotnet workload install maui-maccatalyst
+
+      - name: Restore Mac Catalyst TFM only
+        run: dotnet restore Irc7m.csproj /p:TargetFrameworks=net10.0-maccatalyst -r maccatalyst-arm64
 
       - name: Publish Mac Catalyst arm64 self-contained
         run: |
@@ -30,6 +42,7 @@ jobs:
             -c Release \
             -r maccatalyst-arm64 \
             --self-contained true \
+            --no-restore \
             -o ./artifacts/macos
 
       - name: Zip .app bundle
