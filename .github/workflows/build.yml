@@ -9,10 +9,10 @@ on:
 
 jobs:
 
-  # macOS arm64 - GitHub-hosted runner (macos-15 = Apple Silicon, ships with Xcode 26)
+  # macOS arm64 - GitHub-hosted runner (macos-26 = macOS Tahoe, ships with Xcode 26 / MacCatalyst 26.0 SDK)
   build-macos:
     name: macOS (arm64)
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - name: Checkout
         uses: actions/checkout@v4
