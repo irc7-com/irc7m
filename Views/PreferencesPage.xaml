@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Irc7m.Views.PreferencesPage"
+             Title="Preferences"
+             BackgroundColor="#1e1e1e">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Save" Clicked="OnSaveClicked" />
+        <ToolbarItem Text="Cancel" Clicked="OnCancelClicked" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="0">
+
+            <!-- ══ Directory Server ══════════════════════════════════════════ -->
+            <Label Text="Directory Server" FontSize="14" FontAttributes="Bold"
+                   TextColor="#58a6ff" Margin="0,0,0,8" />
+            <Border StrokeShape="RoundRectangle 8" Stroke="#3c3c3c" BackgroundColor="#252526"
+                    Padding="16" Margin="0,0,0,20">
+                <VerticalStackLayout Spacing="12">
+
+                    <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+
+                        <Label Grid.Row="0" Grid.Column="0" Text="Nickname" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="0" Grid.Column="1" x:Name="NickEntry"
+                               BackgroundColor="#1e1e1e" TextColor="White" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Alt Nickname" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="1" Grid.Column="1" x:Name="AltNickEntry"
+                               BackgroundColor="#1e1e1e" TextColor="White" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Username" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="2" Grid.Column="1" x:Name="UserNameEntry"
+                               BackgroundColor="#1e1e1e" TextColor="White" />
+
+                        <Label Grid.Row="3" Grid.Column="0" Text="Real Name" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="3" Grid.Column="1" x:Name="RealNameEntry"
+                               BackgroundColor="#1e1e1e" TextColor="White" />
+
+                        <Label Grid.Row="4" Grid.Column="0" Text="Email" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="4" Grid.Column="1" x:Name="EmailEntry"
+                               Keyboard="Email" BackgroundColor="#1e1e1e" TextColor="White" />
+
+                        <Label Grid.Row="5" Grid.Column="0" Text="Password" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry Grid.Row="5" Grid.Column="1" x:Name="PasswordEntry"
+                               IsPassword="True" BackgroundColor="#1e1e1e" TextColor="White" />
+
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ══ Connections ═══════════════════════════════════════════════ -->
+            <Label Text="Connections" FontSize="14" FontAttributes="Bold"
+                   TextColor="#58a6ff" Margin="0,0,0,8" />
+            <Border StrokeShape="RoundRectangle 8" Stroke="#3c3c3c" BackgroundColor="#252526"
+                    Padding="16" Margin="0,0,0,20">
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto" RowSpacing="8">
+                        <Label Text="Retry on disconnect" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="RetrySwitch" Grid.Column="1" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" RowSpacing="8">
+                        <Label Text="Retry interval (seconds)" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry x:Name="RetryIntervalEntry" Grid.Column="1"
+                               WidthRequest="80" Keyboard="Numeric"
+                               BackgroundColor="#1e1e1e" TextColor="White"
+                               HorizontalTextAlignment="End" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ══ Windows ═══════════════════════════════════════════════════ -->
+            <Label Text="Windows" FontSize="14" FontAttributes="Bold"
+                   TextColor="#58a6ff" Margin="0,0,0,8" />
+            <Border StrokeShape="RoundRectangle 8" Stroke="#3c3c3c" BackgroundColor="#252526"
+                    Padding="16" Margin="0,0,0,20">
+                <VerticalStackLayout Spacing="12">
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Font size" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Entry x:Name="FontSizeEntry" Grid.Column="1"
+                               WidthRequest="80" Keyboard="Numeric"
+                               BackgroundColor="#1e1e1e" TextColor="White"
+                               HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Show timestamps" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="TimestampsSwitch" Grid.Column="1" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Show mode prefix in nick list" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="ShowModeSwitch" Grid.Column="1" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Debug panel by default" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="DebugModeSwitch" Grid.Column="1" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ══ CTCP ═══════════════════════════════════════════════════════ -->
+            <Label Text="CTCP" FontSize="14" FontAttributes="Bold"
+                   TextColor="#58a6ff" Margin="0,0,0,8" />
+            <Border StrokeShape="RoundRectangle 8" Stroke="#3c3c3c" BackgroundColor="#252526"
+                    Padding="16" Margin="0,0,0,20">
+                <VerticalStackLayout Spacing="12">
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Reply to CTCP VERSION" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="CtcpVersionSwitch" Grid.Column="1" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Reply to CTCP TIME" TextColor="#cccccc" VerticalOptions="Center" />
+                        <Switch x:Name="CtcpTimeSwitch" Grid.Column="1" />
+                    </Grid>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

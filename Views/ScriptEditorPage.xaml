@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Irc7m.Views.ScriptEditorPage"
+             Title="Script Editor"
+             BackgroundColor="#1e1e1e">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="▶ Run" Clicked="OnRunClicked" />
+        <ToolbarItem Text="Clear" Clicked="OnClearOutputClicked" />
+        <ToolbarItem Text="Close" Clicked="OnCloseClicked" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*, 6, 200">
+
+        <!-- ── Code editor ────────────────────────────────────────────────── -->
+        <Grid Grid.Row="0" RowDefinitions="32, *" BackgroundColor="#0d1117">
+            <Label Grid.Row="0"
+                   Text="C# Script"
+                   TextColor="#58a6ff"
+                   FontSize="12"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"
+                   Padding="12,0"
+                   BackgroundColor="#161b22" />
+            <Editor x:Name="CodeEditor"
+                    Grid.Row="1"
+                    Text=""
+                    BackgroundColor="#0d1117"
+                    TextColor="#e6edf3"
+                    FontFamily="Courier New"
+                    FontSize="12"
+                    Margin="4" />
+        </Grid>
+
+        <!-- ── Drag handle ───────────────────────────────────────────────── -->
+        <BoxView Grid.Row="1" Color="#3c3c3c" HeightRequest="6"
+                 BackgroundColor="#30363d">
+            <BoxView.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnDividerPanUpdated" />
+            </BoxView.GestureRecognizers>
+        </BoxView>
+
+        <!-- ── Output console ───────────────────────────────────────────── -->
+        <Grid Grid.Row="2" x:Name="OutputPanel"
+              RowDefinitions="32, *"
+              BackgroundColor="#0d1117">
+            <Label Grid.Row="0"
+                   Text="⚡ Output"
+                   TextColor="#58a6ff"
+                   FontSize="12"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"
+                   Padding="12,0"
+                   BackgroundColor="#161b22" />
+            <Editor x:Name="OutputEditor"
+                    Grid.Row="1"
+                    Text=""
+                    IsReadOnly="True"
+                    BackgroundColor="#0d1117"
+                    TextColor="#8b949e"
+                    FontFamily="Courier New"
+                    FontSize="12"
+                    Margin="4" />
+        </Grid>
+
+    </Grid>
+</ContentPage>
+

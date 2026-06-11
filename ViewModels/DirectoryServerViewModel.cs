@@ -15,11 +15,26 @@ public class DirectoryServerViewModel : ChatWindowViewModel
     private string? _pendingChannel;
     private CancellationTokenSource? _keepAliveCts;
 
+    // ── Public state ────────────────────────────────────────────────────────────
+    public bool IsConnected
+    {
+        get => _isLoggedOn;
+        private set
+        {
+            _isLoggedOn = value;
+            OnPropertyChanged();
+        }
+    }
+
     // ── Reconnect state ────────────────────────────────────────────────────────
     private string? _lastHost;
     private int     _lastPort;
     private bool    _intentionalDisconnect;
     private int     _reconnectAttempt;
+
+    /// <summary>The hostname of the most recently attempted connection (persisted across connect/disconnect).</summary>
+    public string? LastHost => _lastHost;
+    public int     LastPort => _lastPort;
 
     public override bool IsCloseable => false;
 
@@ -57,6 +72,33 @@ public class DirectoryServerViewModel : ChatWindowViewModel
         _ = Connection!.SendRawAsync($"FINDS {normalized}");
     }
 
+    /// <summary>Disconnects intentionally (no reconnect).</summary>
+    public void IntentionalDisconnect()
+    {
+        _intentionalDisconnect = true;
+        StopKeepAlive();
+        Connection?.Disconnect();
+        Connection  = null;
+        IsConnected = false;
+        AppendLine("* Disconnected.");
+    }
+
+    /// <summary>Programmatically connects to a server (called from menu Servers submenu).</summary>
+    public void HandleConnectCommand(string host, int port)
+    {
+        _intentionalDisconnect = true;
+        if (Connection is not null) { Connection.Disconnect(); Connection = null; IsConnected = false; }
+        _ = ConnectToDirectoryAsync(host, port);
+    }
+
+    /// <summary>Sends LIST to retrieve available channels.</summary>
+    public void RequestChannelList()
+    {
+        if (!IsConnected) { AppendLine("* Not connected."); return; }
+        AppendLine("* Requesting channel list…");
+        _ = Connection!.SendRawAsync("LIST");
+    }
+
     // ── Command handling ───────────────────────────────────────────────────────
 
     protected override void HandleCommand(string verb, string[] args)
@@ -65,7 +107,7 @@ public class DirectoryServerViewModel : ChatWindowViewModel
         {
             case "irc7":
                 _intentionalDisconnect = true;
-                if (Connection is not null) { Connection.Disconnect(); Connection = null; _isLoggedOn = false; }
+                if (Connection is not null) { Connection.Disconnect(); Connection = null; IsConnected = false; }
                 _ = ConnectToDirectoryAsync("dir.irc7.com", 6667);
                 break;
 
@@ -75,12 +117,12 @@ public class DirectoryServerViewModel : ChatWindowViewModel
                 if (!int.TryParse(args[1], out var port)) { AppendLine("* Invalid port."); return; }
 
                 _intentionalDisconnect = true;
-                if (Connection is not null) { Connection.Disconnect(); Connection = null; _isLoggedOn = false; }
+                if (Connection is not null) { Connection.Disconnect(); Connection = null; IsConnected = false; }
                 _ = ConnectToDirectoryAsync(args[0], port);
                 break;
 
             case "join":
-                if (!_isLoggedOn)
+                if (!IsConnected)
                 {
                     AppendLine("* Not connected. Use /connect <ip> <port> first.");
                     return;
@@ -149,11 +191,14 @@ public class DirectoryServerViewModel : ChatWindowViewModel
         switch (msg.Command)
         {
             case "001":
-                _isLoggedOn       = true;
                 _reconnectAttempt = 0;
+                IsConnected       = true;
                 ConnectionState   = IrcConnectionState.Connected;
                 AppendLine($"* Connected to Directory Server as {_settings.Nick}");
                 AppendLine("* Use /join <channel> to look up a channel.");
+                // Persist this server so Connect menu can reconnect to it
+                if (_lastHost is not null)
+                    _settings.AddRecentServer(_lastHost, _lastPort);
                 StartKeepAlive();
                 break;
 
@@ -173,6 +218,35 @@ public class DirectoryServerViewModel : ChatWindowViewModel
             case "NOTICE":
                 AppendLine($"* {msg.PrefixNick ?? "Server"}: {msg.Trailing}");
                 break;
+
+            case "PRIVMSG":
+            {
+                var pmTarget = msg.Params.Length > 0 ? msg.Params[0] : "";
+                var pmText   = msg.Trailing ?? "";
+                var pmNick   = msg.PrefixNick ?? msg.Prefix ?? "Server";
+
+                // Handle CTCP within the DS connection
+                if (pmText.StartsWith("\x01") && pmText.EndsWith("\x01"))
+                {
+                    HandleCtcp(pmNick, pmText);
+                    break;
+                }
+
+                // DMs addressed to us → Messages tab
+                if (pmTarget.Equals(_settings.Nick, StringComparison.OrdinalIgnoreCase))
+                    _mainVm.PrivateMessages.ReceiveMessage(pmNick, pmText, Connection);
+                else
+                    AppendLine($"<{pmNick}> {pmText}");
+                break;
+            }
+
+            case "WHISPER":
+            {
+                var wNick = msg.PrefixNick ?? msg.Prefix ?? "Server";
+                var wText = msg.Trailing ?? "";
+                _mainVm.PrivateMessages.ReceiveMessage(wNick, wText, Connection, isWhisper: true);
+                break;
+            }
 
             case "372":
             case "375":
@@ -215,7 +289,7 @@ public class DirectoryServerViewModel : ChatWindowViewModel
 
     private void OnDisconnected(object? sender, EventArgs e)
     {
-        _isLoggedOn = false;
+        IsConnected = false;
         StopKeepAlive();
         ConnectionState = IrcConnectionState.Disconnected;
         AppendDebug("⚡ Disconnected from Directory Server.");
@@ -274,13 +348,33 @@ public class DirectoryServerViewModel : ChatWindowViewModel
         catch (OperationCanceledException) { }
     }
 
-    // ── Helpers ────────────────────────��───────────────────────────────────────
+    // ── Helpers ─────────────────────────────────────────────────────────────────
 
     private static string NormalizeChannel(string input)
     {
         if (input.StartsWith("%#")) return input;
         if (input.StartsWith('#'))  return "%" + input;
         return "%#" + input;
+    }
+
+    private void HandleCtcp(string fromNick, string rawCtcp)
+    {
+        var inner = rawCtcp[1..^1];  // strip \x01
+        if (inner == "VERSION" && _settings.CtcpVersionReply)
+        {
+            _ = Connection?.SendRawAsync($"NOTICE {fromNick} :\x01VERSION Irc7m 1.0\x01");
+            AppendDebug($"CTCP VERSION reply → {fromNick}");
+        }
+        else if (inner == "TIME" && _settings.CtcpTimeReply)
+        {
+            var t = DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy");
+            _ = Connection?.SendRawAsync($"NOTICE {fromNick} :\x01TIME {t}\x01");
+            AppendDebug($"CTCP TIME reply → {fromNick}");
+        }
+        else if (inner.StartsWith("ACTION "))
+        {
+            AppendLine($"* {fromNick} {inner[7..]}");
+        }
     }
 }
 

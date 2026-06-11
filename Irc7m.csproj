@@ -62,6 +62,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.1.25451.107"/>
+        <!-- Roslyn scripting – desktop only (requires JIT; not available on iOS/Android AOT) -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.13.0"
+                          Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst' or $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
     </ItemGroup>
 
 </Project>

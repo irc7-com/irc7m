@@ -4,9 +4,17 @@
              xmlns:views="clr-namespace:Irc7m.Views"
              xmlns:vm="clr-namespace:Irc7m.ViewModels"
              xmlns:models="clr-namespace:Irc7m.Models"
+             xmlns:converters="clr-namespace:Irc7m.Converters"
              x:Class="Irc7m.Views.ChannelWindowView"
+             x:Name="ChannelRoot"
              x:DataType="vm:ChannelViewModel"
              BackgroundColor="#1e1e1e">
+
+    <ContentView.Resources>
+        <converters:BoolToColorConverter x:Key="SelectionColorConverter" 
+                                         TrueColor="#0078d4" 
+                                         FalseColor="Transparent" />
+    </ContentView.Resources>
 
     <Grid x:Name="RootGrid" ColumnDefinitions="*, 1, 160, Auto, Auto">
 
@@ -31,15 +39,84 @@
                    Padding="8,0"
                    BackgroundColor="#2a2a2a" />
             <CollectionView Grid.Row="1"
+                            x:Name="NickListView"
                             ItemsSource="{Binding Nicks}"
-                            BackgroundColor="#252526">
+                            BackgroundColor="#252526"
+                            SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:NickInfo">
-                        <Label Text="{Binding DisplayName}"
-                               TextColor="#cccccc"
-                               FontFamily="Courier New"
-                               FontSize="{DynamicResource AppFontSize}"
-                               Padding="8,2" />
+                        <!--
+                            Bind background directly to IsSelected property for reliable highlighting.
+                            ContextFlyout is on the Grid so the whole row is right-clickable.
+                        -->
+                        <Grid BackgroundColor="{Binding IsSelected, Converter={StaticResource SelectionColorConverter}}">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer 
+                                    Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.SelectNickCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+
+                            <FlyoutBase.ContextFlyout>
+                                <MenuFlyout>
+
+                                    <!-- ── Info ─────────────────────────────── -->
+                                    <MenuFlyoutItem
+                                        Text="View Profile"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.ViewProfileCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="Whisper"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.WhisperNickCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="Ident"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.IdentNickCommand}"
+                                        CommandParameter="{Binding .}" />
+
+                                    <MenuFlyoutSeparator />
+
+                                    <!-- ── Kick submenu ──────────────────────── -->
+                                    <MenuFlyoutSubItem Text="Kick">
+                                        <MenuFlyoutItem
+                                            Text="Profanity"
+                                            Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.KickProfanityCommand}"
+                                            CommandParameter="{Binding .}" />
+                                        <MenuFlyoutItem
+                                            Text="Flooding"
+                                            Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.KickFloodingCommand}"
+                                            CommandParameter="{Binding .}" />
+                                        <MenuFlyoutItem
+                                            Text="Other…"
+                                            Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.KickOtherCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </MenuFlyoutSubItem>
+
+                                    <MenuFlyoutSeparator />
+
+                                    <!-- ── Mode ─────────────────────────────── -->
+                                    <MenuFlyoutItem
+                                        Text="Owner"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.SetOwnerCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="Host"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.SetHostCommand}"
+                                        CommandParameter="{Binding .}" />
+                                    <MenuFlyoutItem
+                                        Text="Participant"
+                                        Command="{Binding Source={x:Reference ChannelRoot}, Path=BindingContext.SetParticipantCommand}"
+                                        CommandParameter="{Binding .}" />
+
+                                </MenuFlyout>
+                            </FlyoutBase.ContextFlyout>
+
+                            <Label Text="{Binding DisplayName}"
+                                   TextColor="#cccccc"
+                                   FontFamily="Courier New"
+                                   FontSize="{DynamicResource AppFontSize}"
+                                   Padding="8,4"
+                                   BackgroundColor="Transparent" />
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

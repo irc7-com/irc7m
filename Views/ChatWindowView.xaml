@@ -42,7 +42,7 @@
                 <controls:HistoryEntry
                        x:Name="InputEntry"
                        Text="{Binding InputText}"
-                       Placeholder="Type a message or /command…"
+                       Placeholder="{Binding InputPlaceholder}"
                        PlaceholderColor="#555555"
                        TextColor="#e0e0e0"
                        BackgroundColor="Transparent"

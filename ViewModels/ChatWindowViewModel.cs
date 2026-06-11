@@ -19,6 +19,7 @@ public class ChatWindowViewModel : INotifyPropertyChanged
     private string _outputText = "";
     private bool   _isSelected;
     private IrcConnectionState _connectionState = IrcConnectionState.None;
+    private string _inputPlaceholder = "Type a message or /command…";
 
     private readonly StringBuilder _outputBuilder = new();
 
@@ -62,6 +63,12 @@ public class ChatWindowViewModel : INotifyPropertyChanged
     }
 
     public virtual bool IsCloseable => true;
+
+    public string InputPlaceholder
+    {
+        get => _inputPlaceholder;
+        protected set { _inputPlaceholder = value; OnPropertyChanged(); }
+    }
 
     // ── Connection state indicator ─────────────────────────────────────────────
 
@@ -247,6 +254,24 @@ public class ChatWindowViewModel : INotifyPropertyChanged
             _outputBuilder.AppendLine();
         _outputBuilder.Append(stamped);
         OutputText = _outputBuilder.ToString();
+    }
+
+    // ── Output helpers (additional) ────────────────────────────────────────────
+
+    /// <summary>Appends a line without adding a timestamp prefix.</summary>
+    protected void AppendRawLine(string line)
+    {
+        if (_outputBuilder.Length > 0) _outputBuilder.AppendLine();
+        _outputBuilder.Append(line);
+        OutputText = _outputBuilder.ToString();
+    }
+
+    /// <summary>Replaces the entire output area with the supplied text.</summary>
+    protected void ReplaceOutput(string text)
+    {
+        _outputBuilder.Clear();
+        _outputBuilder.Append(text);
+        OutputText = text;
     }
 
     // ── INotifyPropertyChanged ─────────────────────────────────────────────────

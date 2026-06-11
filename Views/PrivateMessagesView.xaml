@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Irc7m.Views"
+             xmlns:vm="clr-namespace:Irc7m.ViewModels"
+             xmlns:models="clr-namespace:Irc7m.Models"
+             x:Class="Irc7m.Views.PrivateMessagesView"
+             x:DataType="vm:PrivateMessagesViewModel"
+             BackgroundColor="#1e1e1e">
+
+    <Grid ColumnDefinitions="*, 1, 160">
+
+        <!-- Chat area -->
+        <views:ChatWindowView x:Name="ChatView" Grid.Column="0" />
+
+        <!-- Divider -->
+        <BoxView Grid.Column="1" Color="#3c3c3c" WidthRequest="1" />
+
+        <!-- Senders list -->
+        <Grid Grid.Column="2"
+              RowDefinitions="32, *"
+              BackgroundColor="#252526">
+
+            <Label Grid.Row="0"
+                   Text="Conversations"
+                   TextColor="#888888"
+                   FontSize="{DynamicResource AppFontSize}"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"
+                   Padding="8,0"
+                   BackgroundColor="#2a2a2a" />
+
+            <CollectionView Grid.Row="1"
+                            ItemsSource="{Binding Nicks}"
+                            BackgroundColor="#252526"
+                            SelectionMode="Single"
+                            SelectedItem="{Binding SelectedPeer, Mode=TwoWay}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:NickInfo">
+                        <Label Text="{Binding Nick}"
+                               TextColor="#cccccc"
+                               FontFamily="Courier New"
+                               FontSize="{DynamicResource AppFontSize}"
+                               Padding="8,4" />
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Grid>
+
+    </Grid>
+</ContentView>
+
