@@ -46,11 +46,13 @@ jobs:
             -c Release \
             -r maccatalyst-arm64 \
             --self-contained true \
-            --no-restore \
-            -o ./artifacts/macos
+            --no-restore
 
       - name: Zip .app bundle
-        run: cd artifacts/macos && zip -r9 ../../Irc7m-macos-arm64.zip Irc7m.app
+        run: |
+          APP=$(find bin/Release/net10.0-maccatalyst -name "*.app" -type d | head -1)
+          echo "Found .app at: $APP"
+          zip -r9 Irc7m-macos-arm64.zip "$APP"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -61,7 +63,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -rf artifacts Irc7m-macos-arm64.zip
+        run: rm -f Irc7m-macos-arm64.zip
 
 
   # Windows x64 - GitHub-hosted runner
