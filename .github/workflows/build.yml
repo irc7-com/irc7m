@@ -9,10 +9,14 @@ on:
 
 jobs:
 
-  # macOS arm64 - GitHub-hosted runner (macos-26 = macOS Tahoe, ships with Xcode 26 / MacCatalyst 26.0 SDK)
+  # macOS arm64 - self-hosted runner required (needs Xcode 26 / MacCatalyst 26.0 SDK)
+  # GitHub-hosted macos-26 runners are not yet available (as of June 2026).
+  # Register your Mac: GitHub -> Settings -> Actions -> Runners -> New
+  # Label it:  self-hosted, macos, arm64
+  # Setup script: bash .github/setup-runner.sh <TOKEN> <REPO_URL>
   build-macos:
-    name: macOS (arm64)
-    runs-on: macos-26
+    name: macOS (arm64, self-hosted)
+    runs-on: [self-hosted, macos, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
