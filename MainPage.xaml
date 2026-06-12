@@ -42,6 +42,8 @@
             <MenuFlyoutItem Text="Horizontal Tabs" Clicked="OnHorizontalTabsClicked" />
             <MenuFlyoutItem Text="Vertical Tabs"   Clicked="OnVerticalTabsClicked" />
             <MenuFlyoutSeparator />
+            <MenuFlyoutItem Text="Modes…" Clicked="OnOpenModesClicked" />
+            <MenuFlyoutSeparator />
             <MenuFlyoutItem x:Name="CtcpTimeMenuItem"
                             Text="CTCP Time Reply  ✓"
                             Clicked="OnToggleCtcpTimeClicked" />
@@ -148,15 +150,18 @@
                                 StrokeThickness="0">
 
                             <!-- Right-click on the tab to toggle/clear the debug panel -->
-                            <FlyoutBase.ContextFlyout>
-                                <MenuFlyout>
-                                    <MenuFlyoutItem Text="Toggle Debug Panel"
+                             <FlyoutBase.ContextFlyout>
+                                 <MenuFlyout>
+                                     <MenuFlyoutItem Text="Modes…"
+                                                     Clicked="OnOpenModesFromTabClicked" />
+                                     <MenuFlyoutSeparator />
+                                     <MenuFlyoutItem Text="Toggle Debug Panel"
                                                     Command="{Binding ToggleDebugCommand}" />
-                                    <MenuFlyoutSeparator />
-                                    <MenuFlyoutItem Text="Clear Debug Log"
+                                     <MenuFlyoutSeparator />
+                                     <MenuFlyoutItem Text="Clear Debug Log"
                                                     Command="{Binding ClearDebugCommand}" />
-                                </MenuFlyout>
-                            </FlyoutBase.ContextFlyout>
+                                 </MenuFlyout>
+                             </FlyoutBase.ContextFlyout>
 
                             <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
 

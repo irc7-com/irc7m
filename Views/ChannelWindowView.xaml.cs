@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using Irc7m.ViewModels;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.ApplicationModel;
 
 namespace Irc7m.Views;
 
@@ -14,6 +16,7 @@ public partial class ChannelWindowView : ContentView
     }
 
     public void FocusInput() => ChatView.FocusInput();
+
 
     protected override void OnBindingContextChanged()
     {

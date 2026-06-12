@@ -1,4 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
 using Irc7m.Models;
 using Irc7m.Services;
@@ -54,6 +57,41 @@ public class ChannelViewModel : ChatWindowViewModel
         }
     }
 
+    private void OnNicksCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems is not null)
+        {
+            foreach (NickInfo ni in e.NewItems)
+            {
+                ni.PropertyChanged += OnNickPropertyChanged;
+            }
+        }
+        if (e.OldItems is not null)
+        {
+            foreach (NickInfo ni in e.OldItems)
+            {
+                ni.PropertyChanged -= OnNickPropertyChanged;
+            }
+        }
+        OnPropertyChanged(nameof(CanManageModes));
+    }
+
+    private void OnNickPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NickInfo.UserModes) || e.PropertyName == nameof(NickInfo.ModePrefix))
+            OnPropertyChanged(nameof(CanManageModes));
+    }
+
+    public bool CanManageModes
+    {
+        get
+        {
+            var me = Nicks.FirstOrDefault(n => n.Nick.Equals(_settings.Nick, StringComparison.OrdinalIgnoreCase));
+            if (me is null) return false;
+            return me.UserModes.Contains('q') || me.UserModes.Contains('o');
+        }
+    }
+
     // ── Nicklist context-menu commands ─────────────────────────────────────────
 
     public ICommand SelectNickCommand     { get; }
@@ -78,6 +116,9 @@ public class ChannelViewModel : ChatWindowViewModel
         _settings = settings;
         _mainVm   = mainVm;
         Title     = channel;
+
+        // Attach collection change handler so we can react when our own nick's modes change
+        Nicks.CollectionChanged += OnNicksCollectionChanged;
 
         // ── Wire nicklist commands ─────────────────────────────────────────────
 
@@ -136,6 +177,13 @@ public class ChannelViewModel : ChatWindowViewModel
             var b = CleanNick(nick.Nick);
             _ = Connection?.SendRawAsync($"MODE {Channel} -qaov {b} {b} {b} {b}");
         });
+    }
+
+    public Task SendRawAsync(string raw)
+    {
+        if (Connection is not null)
+            return Connection.SendRawAsync(raw);
+        return Task.CompletedTask;
     }
 
     private static string CleanNick(string raw)
@@ -353,6 +401,78 @@ public class ChannelViewModel : ChatWindowViewModel
                     _mainVm.PrivateMessages.ReceiveMessage(nick, text, Connection);
                 break;
 
+            case "MODE":
+            {
+                // MODE <target> <modes> [params...]
+                if (msg.Params.Length < 2) break;
+                var targetName = msg.Params[0];
+                var modespec = msg.Params[1];
+                var mparams = msg.Params.Length > 2 ? msg.Params[2..] : Array.Empty<string>();
+
+                // If this is a channel mode change, update ChannelModesStore
+                if (string.Equals(targetName, Channel, StringComparison.OrdinalIgnoreCase))
+                {
+                    ChannelModesStore.UpdateFromModeLine(Channel, modespec, mparams);
+                }
+
+                // Handle user mode changes (+o/+q/+v) which affect nick prefixes
+                int pidx = 0;
+                var sign = 1;
+                var anyUserModeChanged = false;
+                foreach (var ch in modespec)
+                {
+                    if (ch == '+') { sign = 1; continue; }
+                    if (ch == '-') { sign = -1; continue; }
+
+                    // modes that require a parameter when applied to users: o q v
+                    if (ch == 'o' || ch == 'q' || ch == 'v')
+                    {
+                        if (pidx >= mparams.Length) continue;
+                        var who = mparams[pidx++];
+                        var bare = who;
+                        // remove any leading prefix characters that may be present
+                        if (bare.Length > 0 && (bare[0] == '@' || bare[0] == '+' || bare[0] == '~' || bare[0] == '.' ))
+                            bare = bare[1..];
+
+                        var ni = Nicks.FirstOrDefault(n => n.Nick.Equals(bare, StringComparison.OrdinalIgnoreCase));
+                        if (ni is null) continue;
+                        if (sign == 1)
+                        {
+                            ni.AddUserMode(ch);
+                            anyUserModeChanged = true;
+                            AppendLine($"* {nick} set +{ch} {bare}");
+                        }
+                        else
+                        {
+                            ni.RemoveUserMode(ch);
+                            anyUserModeChanged = true;
+                            AppendLine($"* {nick} removed -{ch} {bare}");
+                        }
+                    }
+                    else
+                    {
+                        // channel-only mode or parameterized; we already updated ChannelModesStore above
+                    }
+                }
+
+                if (anyUserModeChanged)
+                    SortNicks();
+
+                break;
+            }
+
+            case "324": // RPL_CHANNELMODEIS: params: me, channel, modes, [mode params]
+            {
+                if (msg.Params.Length >= 3)
+                {
+                    var ch = msg.Params[1];
+                    var modespec = msg.Params[2];
+                    var mparams = msg.Params.Length > 3 ? msg.Params[3..] : Array.Empty<string>();
+                    ChannelModesStore.UpdateFromModeLine(ch, modespec, mparams);
+                }
+                break;
+            }
+
             case "WHISPER":
             {
                 var wNick = msg.PrefixNick ?? msg.Prefix ?? "";
@@ -369,10 +489,6 @@ public class ChannelViewModel : ChatWindowViewModel
             case "TOPIC": // topic change live
                 Title = $"{Channel} | {msg.Trailing}";
                 AppendLine($"* {nick} changed topic to: {msg.Trailing}");
-                break;
-
-            case "MODE":
-                AppendLine($"* Mode change: {string.Join(" ", msg.Params)} {msg.Trailing ?? ""}".TrimEnd());
                 break;
 
             case "NOTICE":
@@ -501,7 +617,7 @@ public class ChannelViewModel : ChatWindowViewModel
     {
         var currentSelected = SelectedNick;
         var sorted = Nicks
-            .OrderBy(n => n.ModePrefix switch { '@' => 0, '~' => 0, '&' => 1, '%' => 2, '+' => 3, _ => 4 })
+            .OrderBy(n => n.UserModes.Contains('q') ? 0 : n.UserModes.Contains('o') ? 1 : n.UserModes.Contains('v') ? 2 : 3)
             .ThenBy(n => n.Nick, StringComparer.OrdinalIgnoreCase)
             .ToList();
         Nicks.Clear();

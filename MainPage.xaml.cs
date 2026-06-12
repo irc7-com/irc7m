@@ -285,6 +285,45 @@ public partial class MainPage : ContentPage
         _settings.Save();
     }
 
+    // Open Modes dialog from the View menu for the currently selected channel
+    private async void OnOpenModesClicked(object? sender, EventArgs e)
+    {
+        if (_mainVm.SelectedTab is Irc7m.ViewModels.ChannelViewModel cv)
+        {
+            var vm = new ModesViewModel(cv);
+            var page = new ModesDialog(vm);
+            await Navigation.PushModalAsync(page);
+        }
+        else
+        {
+            await DisplayAlertAsync("Modes", "No channel selected.", "OK");
+        }
+    }
+
+    // Open Modes dialog from a tab's context menu. The MenuFlyoutItem's BindingContext
+    // is the ChatWindowViewModel for that tab, so extract the ChannelViewModel if present.
+    private async void OnOpenModesFromTabClicked(object? sender, EventArgs e)
+    {
+        if (sender is MenuFlyoutItem mfi && mfi.BindingContext is Irc7m.ViewModels.ChannelViewModel cv)
+        {
+            var vm = new ModesViewModel(cv);
+            var page = new ModesDialog(vm);
+            await Navigation.PushModalAsync(page);
+            return;
+        }
+
+        // Fallback: if not directly bound, try the currently selected tab
+        if (_mainVm.SelectedTab is Irc7m.ViewModels.ChannelViewModel selected)
+        {
+            var vm = new ModesViewModel(selected);
+            var page = new ModesDialog(vm);
+            await Navigation.PushModalAsync(page);
+            return;
+        }
+
+        await DisplayAlertAsync("Modes", "No channel available to manage modes.", "OK");
+    }
+
     private string CtcpTimeLabel()
         => _settings.CtcpTimeReply ? "CTCP Time Reply  ✓" : "CTCP Time Reply";
 

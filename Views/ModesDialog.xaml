@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Name="PageRoot" xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Irc7m.ViewModels"
+             x:Class="Irc7m.Views.ModesDialog"
+             BackgroundColor="#80000000">
+
+    <!-- Semi-transparent full-screen page. Center a small framed dialog to appear as a popup. -->
+    <ContentPage.Content>
+        <Grid Padding="12">
+            <Frame
+                BackgroundColor="#0d1117"
+                CornerRadius="8"
+                Padding="16"
+                HasShadow="True"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                WidthRequest="520"
+                MaximumHeightRequest="640">
+
+                <Grid RowDefinitions="Auto, Auto, Auto, *, Auto">
+                    <Label Text="Channel Modes" FontSize="18" TextColor="#cccccc" />
+
+                    <!-- Modes grid: 4 columns, compact items -->
+                    <CollectionView Grid.Row="1" ItemsSource="{Binding ModeEntries}">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical" Span="4" />
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <HorizontalStackLayout Padding="4" Spacing="6" VerticalOptions="Center">
+                                    <CheckBox IsChecked="{Binding IsSet}"
+                                              IsEnabled="{Binding Source={x:Reference PageRoot}, Path=BindingContext.CanManageModes}"
+                                              WidthRequest="18" HeightRequest="18" VerticalOptions="Center" />
+                                    <Label Text="{Binding Label}" TextColor="#cccccc" FontSize="12" VerticalOptions="Center" />
+                                </HorizontalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Grid Grid.Row="2" ColumnDefinitions="*, Auto" Padding="0,8,0,0">
+                        <Label Text="Channel Properties" TextColor="#cccccc" FontSize="16" />
+                        <Button Text="Refresh" Command="{Binding RefreshPropertiesCommand}" Grid.Column="1" />
+                    </Grid>
+
+                    <CollectionView Grid.Row="3" ItemsSource="{Binding PropertyEntries}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4" ColumnDefinitions="120, *" RowDefinitions="Auto">
+                                    <Label Text="{Binding Key}" TextColor="#cccccc" VerticalOptions="Center" />
+                                    <Entry Text="{Binding Value}" FontSize="13" Grid.Column="1" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <StackLayout Grid.Row="4" Orientation="Horizontal" HorizontalOptions="End" Spacing="8">
+                        <Button Text="Apply Modes" Command="{Binding ApplyCommand}" />
+                        <Button Text="Apply Properties" Command="{Binding ApplyPropertiesCommand}" />
+                        <Button Text="Close" Clicked="OnCloseClicked" />
+                    </StackLayout>
+                </Grid>
+
+            </Frame>
+        </Grid>
+    </ContentPage.Content>
+
+</ContentPage>
+
